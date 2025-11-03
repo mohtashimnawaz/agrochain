@@ -1,7 +1,7 @@
 const mqtt = require('mqtt');
 
 // Configuration for demo sensors
-const SENSORS = [
+const DEFAULT_SENSORS = [
   {
     id: 'SENSOR_001',
     location: 'Field_A_North',
@@ -34,12 +34,52 @@ const SENSORS = [
   }
 ];
 
+// Extended sensor pool for scaling tests
+const SENSOR_POOL = [
+  { location: 'Field_C_North', crop: 'Rice', coordinates: { lat: 40.7145, lon: -74.0045 } },
+  { location: 'Field_C_South', crop: 'Rice', coordinates: { lat: 40.7138, lon: -74.0048 } },
+  { location: 'Field_D_East', crop: 'Soybeans', coordinates: { lat: 40.7150, lon: -74.0040 } },
+  { location: 'Field_D_West', crop: 'Soybeans', coordinates: { lat: 40.7142, lon: -74.0052 } },
+  { location: 'Greenhouse_2', crop: 'Peppers', coordinates: { lat: 40.7155, lon: -74.0035 } },
+  { location: 'Greenhouse_3', crop: 'Lettuce', coordinates: { lat: 40.7148, lon: -74.0058 } },
+  { location: 'Field_E_North', crop: 'Barley', coordinates: { lat: 40.7160, lon: -74.0030 } },
+  { location: 'Field_E_South', crop: 'Barley', coordinates: { lat: 40.7152, lon: -74.0062 } }
+];
+
 class IoTDeviceSimulator {
-  constructor(brokerUrl = 'mqtt://localhost:1883') {
+  constructor(brokerUrl = 'mqtt://localhost:1883', options = {}) {
     this.brokerUrl = brokerUrl;
     this.client = null;
-    this.sensors = SENSORS;
+    this.sensors = this.generateSensors(options.sensorCount || 5);
     this.intervalId = null;
+    this.demoMode = options.demoMode || false;
+    this.batteryDrainRate = options.batteryDrainRate || 0.5; // % per hour
+    this.alertThresholds = {
+      tempHigh: 35,
+      tempLow: 5,
+      humidityLow: 30,
+      soilMoistureLow: 25,
+      batteryLow: 20
+    };
+    this.alerts = [];
+  }
+
+  generateSensors(count) {
+    const sensors = [];
+    for (let i = 0; i < Math.min(count, DEFAULT_SENSORS.length); i++) {
+      sensors.push({ ...DEFAULT_SENSORS[i], batteryLevel: 100 });
+    }
+    // Add more sensors from pool if needed
+    if (count > DEFAULT_SENSORS.length) {
+      for (let i = 0; i < count - DEFAULT_SENSORS.length && i < SENSOR_POOL.length; i++) {
+        sensors.push({
+          id: `SENSOR_${String(DEFAULT_SENSORS.length + i + 1).padStart(3, '0')}`,
+          ...SENSOR_POOL[i],
+          batteryLevel: 100
+        });
+      }
+    }
+    return sensors;
   }
 
   connect() {
@@ -73,6 +113,11 @@ class IoTDeviceSimulator {
     const tempVariation = Math.sin((hourOfDay - 6) * Math.PI / 12) * 10;
     let baseTemp = 20 + tempVariation + (Math.random() - 0.5) * 3;
     
+    // Demo mode: occasionally simulate extreme conditions
+    if (this.demoMode && Math.random() < 0.1) {
+      baseTemp += (Math.random() - 0.5) * 15; // More extreme variation
+    }
+    
     // Greenhouse has more controlled temperature
     if (sensor.location.includes('Greenhouse')) {
       baseTemp = 22 + (Math.random() - 0.5) * 2;
@@ -82,7 +127,12 @@ class IoTDeviceSimulator {
     const humidity = Math.max(30, Math.min(90, 80 - (baseTemp - 20) * 2 + (Math.random() - 0.5) * 10));
     
     // Soil moisture decreases slowly over time, with random variation
-    const soilMoisture = Math.max(20, Math.min(80, 50 + (Math.random() - 0.3) * 15));
+    let soilMoisture = Math.max(20, Math.min(80, 50 + (Math.random() - 0.3) * 15));
+    
+    // Demo mode: simulate irrigation cycles
+    if (this.demoMode && Math.random() < 0.05) {
+      soilMoisture = Math.min(80, soilMoisture + 20); // Irrigation boost
+    }
     
     // Soil pH is relatively stable
     const soilPH = Math.max(5.5, Math.min(7.5, 6.5 + (Math.random() - 0.5) * 0.5));
@@ -96,7 +146,24 @@ class IoTDeviceSimulator {
       lightIntensity = Math.round(Math.random() * 50); // Some ambient light at night
     }
     
-    return {
+    // Update battery level with drain
+    if (!sensor.batteryLevel) {
+      sensor.batteryLevel = 100;
+    }
+    sensor.batteryLevel = Math.max(0, sensor.batteryLevel - (this.batteryDrainRate / 3600)); // Drain per update
+    
+    // Demo mode: occasionally simulate battery drain or recharge
+    if (this.demoMode) {
+      if (Math.random() < 0.02) {
+        sensor.batteryLevel = Math.max(0, sensor.batteryLevel - 5); // Sudden drain
+      }
+      if (sensor.batteryLevel < 30 && Math.random() < 0.05) {
+        sensor.batteryLevel = 100; // Battery replaced
+        console.log(`🔋 ${sensor.id}: Battery replaced!`);
+      }
+    }
+    
+    const data = {
       sensorId: sensor.id,
       location: sensor.location,
       crop: sensor.crop,
@@ -107,12 +174,55 @@ class IoTDeviceSimulator {
       soilMoisture: Math.round(soilMoisture * 10) / 10,
       soilPH: Math.round(soilPH * 100) / 100,
       lightIntensity: Math.max(0, lightIntensity),
-      batteryLevel: Math.max(20, Math.min(100, 100 - Math.random() * 2)), // Slowly decreasing
-      status: 'active'
+      batteryLevel: Math.round(sensor.batteryLevel * 10) / 10,
+      status: sensor.batteryLevel > 0 ? 'active' : 'inactive'
     };
+    
+    // Check for alerts
+    this.checkAlerts(data);
+    
+    return data;
+  }
+
+  checkAlerts(data) {
+    const alerts = [];
+    
+    if (data.temperature > this.alertThresholds.tempHigh) {
+      alerts.push({ type: 'HIGH_TEMP', value: data.temperature, threshold: this.alertThresholds.tempHigh });
+    }
+    if (data.temperature < this.alertThresholds.tempLow) {
+      alerts.push({ type: 'LOW_TEMP', value: data.temperature, threshold: this.alertThresholds.tempLow });
+    }
+    if (data.humidity < this.alertThresholds.humidityLow) {
+      alerts.push({ type: 'LOW_HUMIDITY', value: data.humidity, threshold: this.alertThresholds.humidityLow });
+    }
+    if (data.soilMoisture < this.alertThresholds.soilMoistureLow) {
+      alerts.push({ type: 'LOW_SOIL_MOISTURE', value: data.soilMoisture, threshold: this.alertThresholds.soilMoistureLow });
+    }
+    if (data.batteryLevel < this.alertThresholds.batteryLow) {
+      alerts.push({ type: 'LOW_BATTERY', value: data.batteryLevel, threshold: this.alertThresholds.batteryLow });
+    }
+    
+    if (alerts.length > 0) {
+      alerts.forEach(alert => {
+        const alertMsg = `⚠️  ALERT [${data.sensorId}]: ${alert.type} - ${alert.value} (threshold: ${alert.threshold})`;
+        console.log(alertMsg);
+        this.alerts.push({
+          sensorId: data.sensorId,
+          timestamp: data.timestamp,
+          ...alert
+        });
+      });
+    }
   }
 
   publishSensorData(sensor) {
+    // Demo mode: simulate intermittent connectivity
+    if (this.demoMode && Math.random() < 0.05) {
+      console.log(`📡 ${sensor.id}: Connection dropped, skipping update...`);
+      return;
+    }
+    
     const data = this.generateSensorData(sensor);
     const topic = `agrochain/sensors/${sensor.id}`;
     
@@ -120,7 +230,7 @@ class IoTDeviceSimulator {
       if (error) {
         console.error(`❌ Error publishing data for ${sensor.id}:`, error);
       } else {
-        console.log(`📤 ${sensor.id} (${sensor.location}): Temp=${data.temperature}°C, Humidity=${data.humidity}%, Soil=${data.soilMoisture}%`);
+        console.log(`📤 ${sensor.id} (${sensor.location}): Temp=${data.temperature}°C, Humidity=${data.humidity}%, Soil=${data.soilMoisture}%, Battery=${data.batteryLevel}%`);
       }
     });
   }
@@ -238,6 +348,23 @@ class IoTDeviceSimulator {
       this.client.end();
     }
   }
+
+  getAlerts() {
+    return this.alerts;
+  }
+
+  clearAlerts() {
+    this.alerts = [];
+  }
+
+  getSensorStatus() {
+    return this.sensors.map(s => ({
+      id: s.id,
+      location: s.location,
+      batteryLevel: s.batteryLevel || 100,
+      status: (s.batteryLevel || 100) > 0 ? 'active' : 'offline'
+    }));
+  }
 }
 
 // Main execution
@@ -246,7 +373,7 @@ async function main() {
   const args = process.argv.slice(2);
   let intervalSeconds = 10;
   let demoMode = false;
-  let numSensors = SENSORS.length;
+  let numSensors = DEFAULT_SENSORS.length;
   let brokerUrl = 'mqtt://localhost:1883';
   
   for (let i = 0; i < args.length; i++) {
@@ -270,7 +397,7 @@ Usage: node device-simulator.js [options]
 Options:
   --interval <seconds>   Update interval in seconds (default: 10)
   --demo                 Enable demo mode with intermittent issues
-  --sensors <number>     Number of sensors to simulate (default: ${SENSORS.length})
+  --sensors <number>     Number of sensors to simulate (default: ${DEFAULT_SENSORS.length})
   --broker <url>         MQTT broker URL (default: mqtt://localhost:1883)
   --help, -h            Show this help message
 
@@ -286,8 +413,8 @@ Examples:
   const simulator = new IoTDeviceSimulator(brokerUrl);
   
   // Limit sensors if specified
-  if (numSensors < SENSORS.length) {
-    simulator.sensors = SENSORS.slice(0, numSensors);
+  if (numSensors < DEFAULT_SENSORS.length) {
+    simulator.sensors = DEFAULT_SENSORS.slice(0, numSensors);
   }
   
   try {
