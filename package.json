@@ -1,0 +1,35 @@
+{
+  "name": "agrochain",
+  "version": "1.0.0",
+  "description": "Smart Farming with IoT Devices and Solana Blockchain",
+  "main": "backend/server.js",
+  "scripts": {
+    "install-all": "npm install && cd frontend && npm install",
+    "backend": "node backend/server.js",
+    "iot-simulator": "node iot-simulator/device-simulator.js",
+    "iot-demo": "node iot-simulator/device-simulator.js --demo",
+    "frontend": "cd frontend && npm start",
+    "dev": "concurrently \"npm run backend\" \"npm run iot-simulator\" \"npm run frontend\"",
+    "dev-demo": "concurrently \"npm run backend\" \"npm run iot-demo\" \"npm run frontend\"",
+    "test": "node test-flow.js",
+    "test:flow": "node test-flow.js"
+  },
+  "keywords": ["IoT", "Blockchain", "Solana", "Smart Farming", "Agriculture"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.87.6",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "mqtt": "^5.3.0",
+    "aedes": "^0.50.0",
+    "ws": "^8.14.2",
+    "body-parser": "^1.20.2",
+    "bs58": "^5.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  }
+}
