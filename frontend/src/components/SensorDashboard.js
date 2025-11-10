@@ -108,7 +108,7 @@ function SensorDashboard({ sensors }) {
         {sensors.map((sensor, index) => (
           <div 
             key={sensor.sensorId} 
-            className={`group backdrop-blur-xl bg-gradient-to-br ${getStatusBg(sensor.data.temperature, 'temp')} border border-white/10 rounded-2xl shadow-2xl transition-all duration-500 hover:scale-105 hover:shadow-primary-500/30 cursor-pointer ${
+            className={`group backdrop-blur-xl bg-gradient-to-br ${getStatusBg(sensor.temperature || 0, 'temp')} border border-white/10 rounded-2xl shadow-2xl transition-all duration-500 hover:scale-105 hover:shadow-primary-500/30 cursor-pointer ${
               selectedSensor === sensor.sensorId ? 'ring-2 ring-primary-500 scale-105' : ''
             }`}
             style={{ animationDelay: `${index * 100}ms` }}
