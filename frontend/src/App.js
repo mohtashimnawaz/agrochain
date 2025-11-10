@@ -133,113 +133,194 @@ function App() {
 
   if (loading) {
     return (
-      <div className="App">
-        <div className="loading">
-          <h2>🌱 Loading AgroChain Dashboard...</h2>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-6 animate-pulse">
+          <div className="flex items-center justify-center">
+            <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-white">🌱 Loading AgroChain Dashboard...</h2>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="App">
-      <header className="header">
-        <h1>🌾 AgroChain</h1>
-        <p>Smart Farming with IoT Devices and Blockchain Technology</p>
+    <div className="min-h-screen bg-slate-900">
+      {/* Header with gradient */}
+      <header className="backdrop-blur-xl bg-white/5 border-b border-white/10 sticky top-0 z-50 shadow-2xl">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary-400 via-purple-400 to-success-400 bg-clip-text text-transparent animate-shimmer bg-[length:200%_auto]">
+            🌾 AgroChain
+          </h1>
+          <p className="text-white/70 mt-2 text-sm md:text-base">
+            Smart Farming with IoT Devices and Blockchain Technology
+          </p>
+        </div>
       </header>
 
-      {error && (
-        <div className="error">
-          <strong>⚠️ Error:</strong> {error}
-        </div>
-      )}
-
-      <div className="status-bar">
-        <div className="status-item">
-          <div className={`status-indicator ${health?.services?.mqtt === 'running' ? 'active' : 'inactive'}`}></div>
-          <span>MQTT Broker: {health?.services?.mqtt || 'Unknown'}</span>
-        </div>
-        <div className="status-item">
-          <div className={`status-indicator ${health?.services?.solana === 'connected' ? 'active' : 'inactive'}`}></div>
-          <span>Solana: {health?.services?.solana || 'Unknown'}</span>
-        </div>
-        <div className="status-item">
-          <div className="status-indicator active"></div>
-          <span>Active Sensors: {sensors.length}</span>
-        </div>
-        {walletInfo && (
-          <div className="status-item">
-            <span>💰 Balance: {walletInfo.balance?.toFixed(4)} SOL</span>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {error && (
+          <div className="backdrop-blur-lg bg-red-500/10 border border-red-500/30 rounded-2xl p-4 shadow-lg animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <strong className="text-red-400 font-semibold">Error:</strong>
+                <span className="text-red-300 ml-2">{error}</span>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
-      {alerts.length > 0 && (
-        <div className="alerts-banner">
-          <span className="alert-icon">⚠️</span>
-          <span>{alerts.length} Active Alert{alerts.length > 1 ? 's' : ''}</span>
-          <button className="view-alerts-btn" onClick={() => setActiveTab('alerts')}>
-            View Details
-          </button>
+        {/* Status Bar with Tailwind */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${health?.services?.mqtt === 'running' ? 'bg-success-400 shadow-lg shadow-success-400/50 animate-pulse' : 'bg-red-500'}`}></div>
+              <div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">MQTT Broker</div>
+                <div className="text-white font-semibold">{health?.services?.mqtt || 'Unknown'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${health?.services?.solana === 'connected' ? 'bg-success-400 shadow-lg shadow-success-400/50 animate-pulse' : 'bg-red-500'}`}></div>
+              <div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">Solana</div>
+                <div className="text-white font-semibold">{health?.services?.solana || 'Unknown'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-success-400 shadow-lg shadow-success-400/50 animate-pulse"></div>
+              <div>
+                <div className="text-white/50 text-xs uppercase tracking-wide">Active Sensors</div>
+                <div className="text-white font-semibold text-xl">{sensors.length}</div>
+              </div>
+            </div>
+          </div>
+          
+          {walletInfo && (
+            <div className="backdrop-blur-xl bg-gradient-to-br from-primary-500/10 to-success-500/10 border border-primary-500/30 rounded-2xl p-4 hover:scale-105 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">💰</span>
+                <div>
+                  <div className="text-white/50 text-xs uppercase tracking-wide">Balance</div>
+                  <div className="text-white font-bold text-xl">{walletInfo.balance?.toFixed(4)} SOL</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      <div className="tabs">
-        <button 
-          className={`tab ${activeTab === 'sensors' ? 'active' : ''}`}
-          onClick={() => setActiveTab('sensors')}
-        >
-          📊 IoT Sensors
-        </button>
-        <button 
-          className={`tab ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          📈 Analytics
-        </button>
-        <button 
-          className={`tab ${activeTab === 'blockchain' ? 'active' : ''}`}
-          onClick={() => setActiveTab('blockchain')}
-        >
-          ⛓️ Blockchain
-        </button>
-        <button 
-          className={`tab ${activeTab === 'supply-chain' ? 'active' : ''}`}
-          onClick={() => setActiveTab('supply-chain')}
-        >
-          🚚 Supply Chain
-        </button>
-        <button 
-          className={`tab ${activeTab === 'alerts' ? 'active' : ''} ${alerts.length > 0 ? 'has-alerts' : ''}`}
-          onClick={() => setActiveTab('alerts')}
-        >
-          🔔 Alerts {alerts.length > 0 && `(${alerts.length})`}
-        </button>
+        {/* Alerts Banner */}
+        {alerts.length > 0 && (
+          <div className="backdrop-blur-xl bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-2xl p-4 shadow-lg animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl animate-bounce">⚠️</span>
+                <span className="text-white font-semibold">
+                  {alerts.length} Active Alert{alerts.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <button 
+                onClick={() => setActiveTab('alerts')}
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/50"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modern Tabs */}
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-2 shadow-xl">
+          <div className="flex flex-wrap gap-2">
+            <button 
+              className={`flex-1 min-w-[140px] px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                activeTab === 'sensors' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('sensors')}
+            >
+              📊 IoT Sensors
+            </button>
+            <button 
+              className={`flex-1 min-w-[140px] px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                activeTab === 'analytics' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('analytics')}
+            >
+              📈 Analytics
+            </button>
+            <button 
+              className={`flex-1 min-w-[140px] px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                activeTab === 'blockchain' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('blockchain')}
+            >
+              ⛓️ Blockchain
+            </button>
+            <button 
+              className={`flex-1 min-w-[140px] px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                activeTab === 'supply-chain' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('supply-chain')}
+            >
+              🚚 Supply Chain
+            </button>
+            <button 
+              className={`flex-1 min-w-[140px] px-6 py-3 rounded-xl font-semibold transition-all duration-300 relative ${
+                activeTab === 'alerts' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('alerts')}
+            >
+              🔔 Alerts {alerts.length > 0 && (
+                <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full animate-pulse">
+                  {alerts.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        {activeTab === 'sensors' && (
+          <SensorDashboard sensors={sensors} />
+        )}
+
+        {activeTab === 'analytics' && (
+          <Analytics sensors={sensors} cropHistory={cropHistory} />
+        )}
+
+        {activeTab === 'blockchain' && (
+          <BlockchainInfo 
+            walletInfo={walletInfo}
+            transactions={transactions}
+            onAirdrop={fetchWalletInfo}
+          />
+        )}
+
+        {activeTab === 'supply-chain' && (
+          <SupplyChain />
+        )}
+
+        {activeTab === 'alerts' && (
+          <Alerts alerts={alerts} sensors={sensors} />
+        )}
       </div>
-
-      {activeTab === 'sensors' && (
-        <SensorDashboard sensors={sensors} />
-      )}
-
-      {activeTab === 'analytics' && (
-        <Analytics sensors={sensors} cropHistory={cropHistory} />
-      )}
-
-      {activeTab === 'blockchain' && (
-        <BlockchainInfo 
-          walletInfo={walletInfo}
-          transactions={transactions}
-          onAirdrop={fetchWalletInfo}
-        />
-      )}
-
-      {activeTab === 'supply-chain' && (
-        <SupplyChain />
-      )}
-
-      {activeTab === 'alerts' && (
-        <Alerts alerts={alerts} sensors={sensors} />
-      )}
     </div>
   );
 }

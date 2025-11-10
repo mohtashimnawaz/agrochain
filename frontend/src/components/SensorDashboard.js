@@ -6,16 +6,21 @@ function SensorDashboard({ sensors }) {
 
   if (sensors.length === 0) {
     return (
-      <div className="card">
-        <div className="card-header">
-          <h2 className="card-title">No Sensors Connected</h2>
-        </div>
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📡</div>
-          <p style={{ fontSize: '1.2rem', marginBottom: '10px' }}>Waiting for IoT devices to connect and send data...</p>
-          <p style={{ marginTop: '10px', color: '#666' }}>
-            Make sure the IoT simulator is running: <code>npm run iot-simulator</code>
-          </p>
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl p-8 animate-fadeIn">
+        <div className="text-center space-y-6">
+          <div className="text-7xl animate-bounce">📡</div>
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-3">No Sensors Connected</h2>
+            <p className="text-lg text-white/70 mb-4">Waiting for IoT devices to connect and send data...</p>
+            <div className="inline-block backdrop-blur-lg bg-primary-500/10 border border-primary-500/30 rounded-xl px-6 py-3">
+              <p className="text-white/60 text-sm">
+                Make sure the IoT simulator is running: 
+                <code className="ml-2 px-3 py-1 bg-slate-800 text-primary-400 rounded-lg font-mono text-xs">
+                  npm run iot-simulator
+                </code>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -24,60 +29,107 @@ function SensorDashboard({ sensors }) {
   const getStatusColor = (value, type) => {
     switch(type) {
       case 'temp':
-        if (value > 35 || value < 5) return '#dc3545';
-        if (value > 30 || value < 10) return '#ffc107';
-        return '#28a745';
+        if (value > 35 || value < 5) return 'text-red-400';
+        if (value > 30 || value < 10) return 'text-yellow-400';
+        return 'text-success-400';
       case 'moisture':
-        if (value < 25) return '#dc3545';
-        if (value < 40) return '#ffc107';
-        return '#28a745';
+        if (value < 25) return 'text-red-400';
+        if (value < 40) return 'text-yellow-400';
+        return 'text-success-400';
       case 'battery':
-        if (value < 20) return '#dc3545';
-        if (value < 50) return '#ffc107';
-        return '#28a745';
+        if (value < 20) return 'text-red-400';
+        if (value < 50) return 'text-yellow-400';
+        return 'text-success-400';
       default:
-        return '#28a745';
+        return 'text-success-400';
+    }
+  };
+
+  const getStatusBg = (value, type) => {
+    switch(type) {
+      case 'temp':
+        if (value > 35 || value < 5) return 'from-red-500/20 to-red-600/10';
+        if (value > 30 || value < 10) return 'from-yellow-500/20 to-yellow-600/10';
+        return 'from-success-500/20 to-success-600/10';
+      case 'moisture':
+        if (value < 25) return 'from-red-500/20 to-red-600/10';
+        if (value < 40) return 'from-yellow-500/20 to-yellow-600/10';
+        return 'from-success-500/20 to-success-600/10';
+      case 'battery':
+        if (value < 20) return 'from-red-500/20 to-red-600/10';
+        if (value < 50) return 'from-yellow-500/20 to-yellow-600/10';
+        return 'from-success-500/20 to-success-600/10';
+      default:
+        return 'from-success-500/20 to-success-600/10';
     }
   };
 
   return (
-    <div>
-      {/* View Controls */}
-      <div className="dashboard-controls">
-        <div className="control-group">
-          <button 
-            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
-          >
-            🔲 Grid View
-          </button>
-          <button 
-            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-          >
-            📋 List View
-          </button>
-        </div>
-        <div className="sensor-count-badge">
-          {sensors.filter(s => s.status === 'active').length} / {sensors.length} Active
+    <div className="space-y-6 animate-fadeIn">
+      {/* Enhanced View Controls */}
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex gap-2">
+            <button 
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                viewMode === 'grid' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+              }`}
+              onClick={() => setViewMode('grid')}
+            >
+              <span className="flex items-center gap-2">
+                🔲 Grid View
+              </span>
+            </button>
+            <button 
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                viewMode === 'list' 
+                  ? 'bg-gradient-to-r from-primary-500 to-success-500 text-white shadow-lg shadow-primary-500/50 scale-105' 
+                  : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+              }`}
+              onClick={() => setViewMode('list')}
+            >
+              <span className="flex items-center gap-2">
+                📋 List View
+              </span>
+            </button>
+          </div>
+          <div className="backdrop-blur-lg bg-gradient-to-r from-primary-500/20 to-success-500/20 border border-primary-500/30 rounded-xl px-6 py-3 shadow-lg">
+            <span className="text-white font-semibold flex items-center gap-2">
+              <span className="w-3 h-3 bg-success-400 rounded-full animate-pulse shadow-lg shadow-success-400/50"></span>
+              {sensors.filter(s => s.status === 'active').length} / {sensors.length} Active
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className={viewMode === 'grid' ? 'dashboard-grid' : 'dashboard-list'}>
-        {sensors.map((sensor) => (
+      <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6' : 'flex flex-col gap-4'}>
+        {sensors.map((sensor, index) => (
           <div 
             key={sensor.sensorId} 
-            className={`card sensor-card ${selectedSensor === sensor.sensorId ? 'selected' : ''}`}
+            className={`group backdrop-blur-xl bg-gradient-to-br ${getStatusBg(sensor.data.temperature, 'temp')} border border-white/10 rounded-2xl shadow-2xl transition-all duration-500 hover:scale-105 hover:shadow-primary-500/30 cursor-pointer ${
+              selectedSensor === sensor.sensorId ? 'ring-2 ring-primary-500 scale-105' : ''
+            }`}
+            style={{ animationDelay: `${index * 100}ms` }}
             onClick={() => setSelectedSensor(selectedSensor === sensor.sensorId ? null : sensor.sensorId)}
           >
-            <div className="card-header">
-              <div>
-                <h2 className="card-title">{sensor.location}</h2>
-                <span className="sensor-badge">{sensor.crop}</span>
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-success-400 bg-clip-text text-transparent mb-2">
+                    {sensor.location}
+                  </h2>
+                  <span className="inline-block px-3 py-1 bg-primary-500/20 border border-primary-500/30 text-primary-300 rounded-lg text-sm font-semibold">
+                    {sensor.crop}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${sensor.status === 'active' ? 'bg-success-400 animate-pulse shadow-lg shadow-success-400/50' : 'bg-red-500'}`}></div>
+                  <span className="text-xs text-white/60 uppercase tracking-wide">{sensor.status}</span>
+                </div>
               </div>
-              <div className={`status-dot ${sensor.status === 'active' ? 'active' : 'inactive'}`}></div>
             </div>
-            
             <div className="sensor-info-row">
               <div className="sensor-info-item">
                 <span className="info-icon">📍</span>
